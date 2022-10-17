@@ -19,12 +19,8 @@ export class TasksController {
   constructor(private taskService: TasksService) {}
 
   @Get()
-  getTasks(@Query() filterDto: GetTasksFilterDto): Task[] {
-    if (Object.keys(filterDto).length) {
-      return this.taskService.getTasksWithFilters(filterDto);
-    } else {
-      return this.taskService.getAllTasks();
-    }
+  getTasks(@Query() filterDto: GetTasksFilterDto) {
+    return this.taskService.getTasks(filterDto);
   }
 
   @Get('/:id')
