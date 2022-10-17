@@ -1,12 +1,20 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Task, TaskStatus } from './tasks.model';
+import { TaskStatus } from './task-status.enum';
 import { v4 as uuid } from 'uuid';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { GetTasksFilterDto } from './dto/get-tasks-filter.dto';
+import { Task } from './task.entity';
+import { Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
 export class TasksService {
   private tasks: Task[] = [];
+
+  constructor(
+    @InjectRepository(Task)
+    private tasksRepository: Repository<Task>,
+  ) {}
 
   getAllTasks(): Task[] {
     return this.tasks;
@@ -31,35 +39,35 @@ export class TasksService {
     return tasks;
   }
 
-  getTaskById(id: string) {
-    const task = this.getAllTasks().find((task) => task.id === id);
+  async getTaskById(id: string) {
+    const task = await this.tasksRepository.findOne({ where: { id } });
 
     if (!task) throw new NotFoundException(`Task with id: "${id}" not found`);
 
     return task;
   }
 
-  removeTaskById(id: string) {
-    this.tasks = this.getAllTasks().filter((task) => task.id !== id);
+  async removeTaskById(id: string) {
+    const { affected } = await this.tasksRepository.delete(id);
+    if (affected === 0)
+      throw new NotFoundException(`Task with id: "${id}" not found`);
   }
 
-  updateTaskStatus(id: string, status: TaskStatus) {
-    const task = this.getTaskById(id);
+  async updateTaskStatus(id: string, status: TaskStatus) {
+    const task = await this.getTaskById(id);
     task.status = status;
+    await this.tasksRepository.save(task);
     return task;
   }
 
-  createTask(createTaskDto: CreateTaskDto) {
-    const { title, description } = createTaskDto;
-
-    const task: Task = {
-      id: uuid(),
-      title,
-      description,
+  async createTask(createTaskDto: CreateTaskDto) {
+    const task = this.tasksRepository.create({
+      ...createTaskDto,
       status: TaskStatus.OPEN,
-    };
+    });
 
-    this.tasks.push(task);
+    await this.tasksRepository.save(task);
+
     return task;
   }
 }
