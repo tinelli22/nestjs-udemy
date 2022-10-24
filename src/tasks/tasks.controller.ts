@@ -28,21 +28,22 @@ export class TasksController {
   }
 
   @Get('/:id')
-  getTaskById(@Param('id') id: string) {
-    return this.taskService.getTaskById(id);
+  getTaskById(@Param('id') id: string, @GetUser() user: User) {
+    return this.taskService.getTaskById(id, user);
   }
 
   @Delete('/:id')
-  removeTaskById(@Param('id') id: string) {
-    return this.taskService.removeTaskById(id);
+  removeTaskById(@Param('id') id: string, @GetUser() user: User) {
+    return this.taskService.removeTaskById(id, user);
   }
 
   @Patch('/:id/status')
   updateTaskStatus(
     @Param('id') id: string,
     @Body('status') status: TaskStatus,
+    @GetUser() user: User,
   ) {
-    return this.taskService.updateTaskStatus(id, status);
+    return this.taskService.updateTaskStatus(id, status, user);
   }
 
   @Post()
