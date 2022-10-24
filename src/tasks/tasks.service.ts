@@ -5,6 +5,7 @@ import { GetTasksFilterDto } from './dto/get-tasks-filter.dto';
 import { Task } from './task.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
+import { User } from 'src/auth/user.entity';
 
 @Injectable()
 export class TasksService {
@@ -13,9 +14,10 @@ export class TasksService {
     private tasksRepository: Repository<Task>,
   ) {}
 
-  async getTasks(filterDto: GetTasksFilterDto) {
+  async getTasks(filterDto: GetTasksFilterDto, user: User) {
     const { status, search } = filterDto;
     const query = this.tasksRepository.createQueryBuilder('task');
+    query.where({ user });
 
     if (status) {
       query.andWhere('task.status = :status', { status });
@@ -23,7 +25,7 @@ export class TasksService {
 
     if (search) {
       query.andWhere(
-        'LOWER(task.title) LIKE LOWER(:search) OR LOWER(task.description) LIKE LOWER(:search)',
+        '(LOWER(task.title) LIKE LOWER(:search) OR LOWER(task.description) LIKE LOWER(:search))',
         { search: `%${search}%` },
       );
     }
@@ -54,10 +56,11 @@ export class TasksService {
     return task;
   }
 
-  async createTask(createTaskDto: CreateTaskDto) {
+  async createTask(createTaskDto: CreateTaskDto, user: User) {
     const task = this.tasksRepository.create({
       ...createTaskDto,
       status: TaskStatus.OPEN,
+      user,
     });
 
     await this.tasksRepository.save(task);
